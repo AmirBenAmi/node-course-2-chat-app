@@ -9,10 +9,10 @@ const {Users} = require('./utils/users');
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
 
-var app = express();
-var server = http.createServer(app);
-var io = socketIO(server);
-var users = new Users();
+let app = express();
+let server = http.createServer(app);
+let io = socketIO(server);
+let users = new Users();
 
 app.use(express.static(publicPath));
 
@@ -22,6 +22,10 @@ io.on('connection', (socket) => {
   socket.on('join', (params, callback) => {
     if(!isRealString(params.name) || !isRealString(params.room)){
       return callback('Name and room name are required.')
+    }
+
+      if(users.users.find((user) => user.name === params.name)){
+      return callback('Display name is alredy taken.')
     }
     socket.join(params.room);
     //socket.leave('The office Fans');
@@ -38,7 +42,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('createMessage', (message, callback) => {
-    var user = users.getUser(socket.id);
+    let user = users.getUser(socket.id);
     // console.log('create message user: ',user);
     
     if(user && isRealString(message.text)){
@@ -50,7 +54,7 @@ io.on('connection', (socket) => {
 
   socket.on('createLoctionMessage', (coords) => {
     // console.log('call to gen location message');
-    var user = users.getUser(socket.id);
+    let user = users.getUser(socket.id);
     if(user){
       io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude));
     }
@@ -58,7 +62,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User was disconnected');
-    var user = users.removeUser(socket.id);
+    let user = users.removeUser(socket.id);
 
     if(user){
       io.to(user.room).emit('updateUserList', users.getUserList(user.room));
